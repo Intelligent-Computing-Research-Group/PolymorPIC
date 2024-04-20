@@ -1,0 +1,66 @@
+
+P2S_R:
+ ClientID: 0
+ HasSecondTrace: 1
+ bufNum:
+  Begin: 0
+  Len: 2
+ precision:
+  Begin: 2
+  Len: 3
+
+
+P2S_L:
+ ClientID: 1
+ HasSecondTrace: 1
+ L_block_row:
+  Begin: 0
+  Len: 10
+ precision:
+  Begin: 10
+  Len: 3
+
+
+LOAD_P:
+ ClientID: 2
+ HasSecondTrace: 1
+ rowNum:
+  Begin: 0
+  Len: 10
+ len64_per_row:
+  Begin: 10
+  Len: 10
+
+
+STORE_P:
+ ClientID: 3
+ HasSecondTrace: 1
+ rowNum:
+  Begin: 0
+  Len: 10
+ len64_per_row:
+  Begin: 10
+  Len: 10
+
+
+ACC:
+ ClientID: 4
+ HasSecondTrace: 1
+ arrayNum:
+  Begin: 0
+  Len: 4
+ total_rowNum:
+  Begin: 4
+  Len: 12
+ dest_picADDR:
+  Begin: 16
+  Len: 17
+ if_load_dest:
+  Begin: 33
+  Len: 1
+
+
+EXE:
+ ClientID: 5
+ HasSecondTrace: 0
+

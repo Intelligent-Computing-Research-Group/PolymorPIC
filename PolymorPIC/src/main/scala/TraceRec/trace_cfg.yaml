@@ -1,0 +1,16 @@
+ID:
+ Begin: 0
+ Len: 3
+
+STATE:
+ Begin: 3
+ Len: 1
+
+TIME:
+ Begin: 4
+ Len: 36
+
+PicAddr:
+ Begin: 40
+ Len: 17
+
