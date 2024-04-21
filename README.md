@@ -22,10 +22,43 @@
 </p>
 
 
-## 
+## Contents
+- [News](#news)
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Model Weights](#model-weights)
+- [Usage](#usage)
+  - [Simulator](#simulator)
+    - [CPU Workload](#cpu-workload)
+    - [Neural Network Workload](#neural-network-workload)
+  - [Deployment](#deployment)
+- [Citation](#citation)
 
 
+## News
+
+- [2024/6] First work-around of PolymorPIC is done!
+
+## Introduction
+
+## Installation 
 
 ```
 docker run -it --name="PolymorPIC" --platform linux/amd64 PolymorPIC:latest /bin/bash  
+```
+
+
+## Usage
+
+### Simulator
+
+#### CPU Workload
+
+#### Neural Network Workload
+
+### Deployment
+
+## Citation
+```
+to be included
 ```
