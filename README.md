@@ -1,7 +1,8 @@
 # PolymorPIC
 Polymorphic Processing-in-Cache
 
-![logo](PolymorPIC/polymorpic_logo.png)
+<img src="polymorpic_logo.webp" width="250" height="250">
+<!-- ![logo](polymorpic_logo.png ) -->
 
 
 
