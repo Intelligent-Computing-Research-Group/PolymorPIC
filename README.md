@@ -1,0 +1,430 @@
+# Manual of PolymorPIC deployment on FPGA
+Includes module test on both simulator and Linux running on FPGA.
+
+### Prerequisites
+1. Chipyard12
+2. Vivado2022.2
+
+### RTL Structure
+
+The follwoing figure shows the RTL modules overall view from `DigitalTop` Module.
+![Overview](Figures/rtl_view_all.png)
+The `DigitalTop` module is an SoC module with certain peripherals excluded, mainly comprising various buses, the Rocket core, and the LLC module.
+The origine line is the module modified in PolymorPIC, and the red box is the added modules.
+
+
+<ol>
+<li>RoCC interface in <code>RockerTile</code> module</li>
+Based on the RoCC interface specification, functionality to receive instructions from the CPU and forward them to the PolymorPIC main (<code>PolymorPIC_main_in_cache</code>) module.
+
+<li>Added Modules in PolymorPIC main module</li>
+<code>PolymorPIC_main_in_cache</code> is PolymorPIC main module, including <code>CMD_resolver</code> and other Data Process Modules.
+<code>CMD_resolver</code> receives command from bus (sent from RoCC interface in Core). Then it conducts instruction decoding and send execution requests to respective processing units. It also returns operational status data through the bus back to the RoCC, which will further return it to user program.
+
+Other modules like DMA, P2S and im2col work to read/write and process data from/to PIC part LLC (<code>InclusiveCache</code>).
+For easy communication with LLC, <code>PolymorPIC_main_in_cache</code> module is put inside LLC module.
+
+<li>Modified LLC</li>
+<code>SwitchCtl_pic</code> module is added to handle PIC allocation/release request. 
+
+<code>FlushReqRouter</code> module is added to handle direct cache flush for PIC allocaion.
+
+<code>Directory</code> module is modified to 1) handle direct queries from <code>FlushReqRouter</code>. 2) Keep PIC mode cache ways isolated from normal CPU programs.
+
+<code>BankStore</code> module is modifed to add Bit-serial Process Engine under arrays to support near memory computing.
+
+</ol>
+
+### BankStore
+
+In this demo, LLC is configured as a 1 MB, 16-way set-associative cache. Each sub-array is sized 512$\times$64, and each Mat contains four sub-arrays. The i-th Mat of each Bank together forms a *Level*. Level 0 is reserved exclusively for use as the CPU cache, while the other levels can be switched to PIC mode.
+
+The following figure shows the structure.
+
+![Bank](Figures/bank_structure.png)
+
+### Embed PolymorPIC code into Chipyard.
+
+**Only chipyard12 is verified and supported for this demo.**
+
+Follow the following steps to put PolymorPIC code to chipyard and modify some configuration files. Each step title indicates the **direct operation** to be performed, and the content beneath the title explains the **reasons and details of that step**.
+
+<ol>
+<li>Copy the folder <code>rocket-chip-inclusive-cache-pic-virtual</code> in this repo to the folder <code>generators</code> in chipyard.</li>
+<br>
+
+The PolymorPIC code is located along side inclusive cache for easy getting LLC parameters. 
+
+The folder <code>rocket-chip-inclusive-cache-pic-virtual</code> contains the code of modified `InclusiveCache` and our <code>PolymorPIC_main_in_cache</code> module.
+
+The <strong>virtual</strong> in the name means it <strong>supports operation system</strong>.
+
+<li>For rocket, replace <samp>generators/rocket-chip/src/main/scala/tile/LazyRoCC.scala</samp> with <code>LazyRoCC.scala</code> provided in this repo under folder <code>Rocket</code>.</li>
+<br>
+
+This aims to add a TileLink slave port in RoCC and enable it connected to bus when initialized.
+
+This code in line 68 adds the port:
+```scala
+val tlSlaveNode : TLNode = TLIdentityNode()
+```
+
+This code in line 85 adds the connection:
+```scala
+roccs.map(_.tlSlaveNode).foreach { tl_slave => tl_slave :=TLFragmenter(8, 64):*= tlSlaveXbar.node }
+```
+
+<li>For Boom, replace <samp>/root/chipyard/generators/boom/src/main/scala/common/tile.scala</samp> with <code>tile.scala</code> under folder <code>Boom</code>. Replace <samp>/root/chipyard/generators/boom/src/main/scala/exu/execution-units/rocc.scala</samp> with <code>rocc.scala</code> under folder <code>Boom</code>.</li>
+<br>
+
+Besides the connection of extra slave port in RoCC, the modification mainly aim to fix the bug that the uninitilization of some RoCC ports can't pass the compilation in chipyard12.
+
+The modification in <code>tile.scala</code> includes slave port connection and initilize fpu port.
+
+Connect salve port with RoCC:
+```
+DisableMonitors { implicit p => tlSlaveXbar.node :*= slaveNode }  // line 99
+roccs.map(_.tlSlaveNode).foreach { tl_slave => tl_slave :=TLFragmenter(8, 64):*= tlSlaveXbar.node }  // line 149
+```
+
+Initilize fpu port:
+```scala
+val fp_ios = outer.roccs.map(r => {
+        val roccio = r.module.io
+        roccio.fpu_req.ready := true.B
+        roccio.fpu_resp.valid := false.B
+        roccio.fpu_resp.bits := DontCare
+      })
+```
+
+The modification in <code>rocc.scala</code> is to fix the uninitilization of some RoCC ports:
+```scala
+  // line 68
+  io.req.ready := true.B
+  io.core.rocc.exception := false.B
+  io.core.rocc.mem.req.ready := false.B
+  io.core.rocc.mem.s2_nack := false.B
+  io.core.rocc.mem.s2_nack_cause_raw := false.B
+  io.core.rocc.mem.s2_uncached := false.B
+  io.core.rocc.mem.s2_paddr := DontCare
+  io.core.rocc.mem.resp.valid := false.B
+  io.core.rocc.mem.resp.bits := DontCare
+  io.core.rocc.mem.replay_next := false.B
+  io.core.rocc.mem.s2_xcpt.ma.ld := false.B
+  io.core.rocc.mem.s2_xcpt.ma.st := false.B
+  io.core.rocc.mem.s2_xcpt.pf.ld := false.B
+  io.core.rocc.mem.s2_xcpt.pf.st := false.B
+  io.core.rocc.mem.s2_xcpt.gf.ld := false.B
+  io.core.rocc.mem.s2_xcpt.gf.st := false.B
+  io.core.rocc.mem.s2_xcpt.ae.ld := false.B
+  io.core.rocc.mem.s2_xcpt.ae.st := false.B
+  io.core.rocc.mem.s2_gpa := DontCare
+  io.core.rocc.mem.s2_gpa_is_pte := false.B
+  io.core.rocc.mem.uncached_resp.map(r => {
+    r.valid := false.B
+    r.bits := DontCare
+  })
+  io.core.rocc.mem.ordered := false.B
+  io.core.rocc.mem.perf.acquire := false.B
+  io.core.rocc.mem.perf.release := false.B
+  io.core.rocc.mem.perf.grant := false.B
+  io.core.rocc.mem.perf.tlbMiss := false.B
+  io.core.rocc.mem.perf.blocked := false.B
+  io.core.rocc.mem.perf.canAcceptStoreThenLoad := false.B
+  io.core.rocc.mem.perf.canAcceptStoreThenRMW := false.B
+  io.core.rocc.mem.perf.canAcceptLoadThenLoad := false.B
+  io.core.rocc.mem.perf.storeBufferEmptyAfterLoad := false.B
+  io.core.rocc.mem.perf.storeBufferEmptyAfterStore := false.B
+  io.core.rocc.mem.clock_enabled := false.B
+
+  // line 174
+  io.core.rocc.cmd.bits  := DontCare
+
+  // line 247
+  io.resp.bits           := DontCare
+```
+
+<li>Replace the original <code>build.sbt</code> in chipyard</li>
+
+The following code which is the original LLC cache should be removed:
+```scala
+// lazy val rocketchip_inclusive_cache = (project in file("generators/rocket-chip-inclusive-cache"))
+//   .settings(
+//     commonSettings,
+//     Compile / scalaSource := baseDirectory.value / "design/craft")
+//   .dependsOn(rocketchip)
+//   .settings(libraryDependencies ++= rocketLibDeps.value)
+```
+
+And the following build info of LLC+PolymorPIC is added:
+```scala
+lazy val rocketchip_inclusive_cache = (project in file("generators/rocket-chip-inclusive-cache-pic-virtual"))
+  .settings(
+    commonSettings,
+    Compile / scalaSource := baseDirectory.value / "design/craft")
+  .dependsOn(rocketchip)
+  .settings(libraryDependencies ++= rocketLibDeps.value)
+```
+
+<li>Add chipyard generator config code <code>PolymorPIC_Configs.scala</code> in this repo to chipyard folder <samp>/root/chipyard/generators/chipyard/src/main/scala/config</samp></li>
+<br>
+
+This add the configuration for generating SoC with PolymorPIC. The example config <code>PICRocket1024</code> gives an sample that BigRocket+1MB LLC with PIC.
+
+<li>Delete the original <code>benchmarks</code> under <samp>/root/chipyard/toolchains/riscv-tools/riscv-tests/</samp>. Add <code>benchmarks</code> in this repo to chipyard folder <samp>/root/chipyard/toolchains/riscv-tools/riscv-tests/</samp>. Delete the original <code>benchmarks</code>.</li>
+<br>
+
+Under <code>benchmarks</code>, besides the original existed <code>common</code>, there are some extra tests proveded.
+
+For example, <code>ACC_test</code> is to test the functionality of accumulator.
+
+The C code of these tests is generated by python script for easy changing the test parameters.
+
+In each test, there is <code>ISA.c/h</code>, which is automatically generated during hardware (scala code) compile.
+
+The <code>Makefile</code> contains which test to compile when <code>make</code>.
+
+</ol>
+
+### General Simulation and FPGA deployment steps
+
+#### Simulation on Chipyard
+
+To verify the correctness of the RTL functionality, the design should first be validated using VCS or Verilator.
+Before this step, step `Embed PolymorPIC code into Chipyard` should have been finished.
+Make sure the <code>benchmarks</code> contains these tests.
+
+##### Example: Run ACC test
+
+Go to the `chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/ACC_test`. Then go to folder `gen`, where python scripts locate. The `gen.py` contain the main. In `testSet`, there are two tests provided:
+```python
+testSet={
+        "a1":{"len_64b":256,"srcArrayID":8*4,"srcNum":5,"destArrayID":5*4,"bitWidth":"_32b_"},
+        "a2":{"len_64b":16,"srcArrayID":16*4,"srcNum":4,"destArrayID":60*4,"bitWidth":"_32b_"},
+        }
+```
+
+`a1` and `a2` is test ID. Multi tests can be run one by one, which can test whether some register is reset correctly after one execution.
+`len_64b` is the number of rows in each-subarray.
+`srcArrayID` is the begin sub-array ID to accumulate.
+`destArrayID` is the sub-array to save.
+`bitWidth` only supports `_32b_` currently.
+The test also contains the mode switch part.
+
+The diagram of what test `a1` does is shown in the following figure:
+![ACC_test](Figures/acc.png)
+
+Start the simulation:
+<ol>
+<li>Compile C program</li>
+
+Go back to `chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/ACC_test`, make sure `ACC_test` is in Makefile:
+```
+bmarks = \
+	ACC_test \
+```
+Then run `make`. Afterwards, `ACC_test.riscv` will generated under the folder.
+
+<li>Compile hardware and run simulation</li>
+
+Go to `chipyard/sims/verilator` (use vcs here), then run the following code:
+```
+make run-binary LOADMEM=1 CONFIG=PICRocket1024 BINARY=/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/ACC_test.riscv VERILATORTHREADS=10 -j 10
+```
+
+The first time running needs to compile the hardware first. 
+Then the simulation will output the C test program printf like:
+```
+Switch successfully!
+...
+...
+...
+################ Runtime State ###############
+Available Cache Volumn (KB) = 1024
+Available PIC Volumn (KB) = 0
+Available Mats = 0
+Available Mats Range = 63~63
+##############################################
+ACC check start!
+This Acc result is all correct!
+```
+
+</ol>
+
+#### FPGA deployment (Run Linux)
+
+The FPGA deployment implementation is based on https://github.com/eugene-tarassov/vivado-risc-v from eugene-tarassov.
+The modified project is `vivado_fpga_pic`.
+We further modify the process and make it support zcu102 and customized boards.
+This step is elaborated based on zcu102, and directly use our modified script that supports the zcu102.
+With respect to how to support customized boards not from Xilinx and create the script, the turtorial is also provided in other section. 
+
+##### 1. Hardware Preparation (zcu102 as example)
+
+<ol>
+<li>SD card slot preparasion</li>
+
+For easy implementation and follow the method in eugene-tarassov/vivado-risc-v, we choose to use an external memory card.
+
+The implementation only use the PL, and PS will not be used, so the SD slot connnected to the PS will not work.
+
+Therefore, an external storage card is needed.
+
+<p align="center">
+  <img src="Figures/pmod_sd.png" alt="SD-Slot" width="300">
+</p>
+
+It uses PMOD connector, which is supported by PL side of zcu102. Connect it to the board like this:
+
+<p align="center">
+  <img src="Figures/connect.png" alt="connect" width="300">
+</p>
+
+Go to the folder `vivado_fpga_pic`. Then input command:
+```bash
+make vivado-tcl BOARD=zcu102 CONFIG=BigRocketPIC1024KB ROCKET_FREQ_MHZ=72.0
+```
+Then the compile begins. Afterwards, a folder named `workspace` is generated. 
+It should be copied to a machine with Vivado2022.2. For easy movement, input the pack command:
+```bash
+make pack PACK_NAME=zcu102_bigrocket_PIC_1M_72mhz
+```
+
+Then the necessary files will be packed into `zcu102_bigrocket_PIC_1M_72mhz.tar`.
+
+Copy `zcu102_bigrocket_PIC_1M_72mhz.tar` to a machine having vivado2022.2.
+
+Extract the files and open vivado.
+
+```bash
+source /nvme/zcu102_bigRocket_pic_1024_72mhz/workspace/BigRocketPIC1024KB/system-zcu102.tcl
+```
+
+Input the upper command is input in the following position of gui:
+<p align="center">
+  <img src="Figures/vivado_start.png" alt="connect" width="300">
+</p>
+
+
+
+The `system-zcu102.tcl` is the script that can setup the whole vivado project.
+
+Then, the vivado project is generated. The block design is like:
+<p align="center">
+  <img src="Figures/block_design.png" alt="connect" width="600">
+</p>
+
+The `.xdc` file defines the some connection to the peripheral device like SD, UART and reset button.
+For example, to reset, use the button in the figure:
+<p align="center">
+  <img src="Figures/zcu102_reset_button.png" alt="connect" width="300">
+</p>
+
+This constrain of the reset is defined in `top.xdc`:
+```
+set_property PACKAGE_PIN AG13 [get_ports rst]
+set_property IOSTANDARD LVCMOS33 [get_ports rst]
+```
+
+Then, run Synthesis and Implementaion and Generate Bitstream.
+The resource on zcu102 pl is:
+<p align="center">
+  <img src="Figures/utlization.png" alt="connect" width="500">
+</p>
+
+
+</ol>
+
+##### 2. Software Preparation
+
+This step aims to prepare the linux image, which contains the programs to run on FPGA.
+Take ACC_test as an example here.
+
+###### Example: ACC test
+
+The Accumulator has been test on RTL simulator like VCS and verilator, however, those simulation is based on baremetal.
+
+To run simulation on Linux on system-level, the page needs to be locked. The code is like:
+```C
+#ifdef LINUX
+    if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0) 
+    {
+        perror("mlockall failed");
+        exit(1);
+    }
+#endif
+
+#ifdef PIC_MODE
+    conduct_alloc(15);
+#endif
+    printf("Test a1 begin.\n");
+```
+
+The pre-build image is ready under folder `debian_img`. Steps to compile and move the execution file to the image:
+<ol>
+<li>Compile the riscv execution using cross-comepile</li>
+
+The host machine should install:
+```bash
+apt install gcc-riscv64-linux-gnu g++-riscv64-linux-gnu
+```
+Then go to the `ACC_test` folder and run:
+```bash
+riscv64-linux-gnu-gcc  -DLINUX -o  ACC main.c ISA.c
+```
+Then we get elf file `ACC`.
+
+<li>Copy file to the Linux image</li>
+
+The image file should be mount first. The file system is the second section of the provided `debian-riscv64.sd.img`.
+
+You can use the provided scrip to mount:
+```bash
+./mount.sh debian-riscv64.sd.img 2 /root/img_mount/
+```
+
+It is mount to the folder `/root/img_mount/`:
+<p align="center">
+  <img src="Figures/image_files.jpg" alt="connect" width="300">
+</p>
+
+Directly copy the elf `ACC` to root or any other folders.
+
+Then, umount:
+```bash
+./umount.sh debian-riscv64.sd.img /root/img_mount/
+```
+
+Then, flash the `debian-riscv64.sd.img` to the SD card using balenaEtcher. 
+
+##### 3. Start FPGA
+
+Connect zcu102 jtag and uart to the machine.
+Connect the SD card to the zcu102.
+Use vivado to program the device.
+Open serial monitor to watch the uart output (115200):
+
+<p align="center">
+  <img src="Figures/uart_start.jpg" alt="connect" width="500">
+</p>
+
+Then, there is login step:
+```
+debian login: root
+Password: 
+Linux debian 6.9.6-dirty #1 SMP Fri Jul 19 23:29:15 CST 2024 riscv64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+root@debian:~#
+```
+
+The username is `root` and the password is `1`.
+
+Run `ACC`.
+
+</ol>
