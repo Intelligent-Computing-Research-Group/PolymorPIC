@@ -1,6 +1,24 @@
 # Manual of PolymorPIC deployment on FPGA
 Includes module test on both simulator and Linux running on FPGA.
 
+```
+@inproceedings{zou2025polymorpic,
+author = {Zou, Cheng and Wei, Ziling and Lee, Jun Yan and Nie, Chen and You, Kang and He, Zhezhi},
+title = {PolymorPIC: Embedding Polymorphic Processing-in-Cache in RISC-V based Processor for Full-stack Efficient AI Inference},
+year = {2025},
+isbn = {9798400715730},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3725843.3756066},
+doi = {10.1145/3725843.3756066},
+pages = {1609–1624},
+numpages = {16},
+keywords = {Processing-in-Cache, Neural Network Acceleration, AIoT, Area-Efficient SoC, RISC-V, Full-stack},
+location = {},
+series = {MICRO '25}
+}
+```
+
 ### Prerequisites
 1. Chipyard12
 2. Vivado2022.2
