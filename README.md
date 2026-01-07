@@ -1,8 +1,6 @@
 # Manual of PolymorPIC deployment on FPGA
 Includes module test on both simulator and Linux running on FPGA.
 
-<u><em>PolymorPIC chisel code and FPGA deployment script will be updated before December!</em></u>
-
 ```
 @inproceedings{zou2025polymorpic,
 author = {Zou, Cheng and Wei, Ziling and Lee, Jun Yan and Nie, Chen and You, Kang and He, Zhezhi},
