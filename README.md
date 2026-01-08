@@ -1,6 +1,13 @@
 # Manual of PolymorPIC deployment on FPGA
 Includes module test on both simulator and Linux running on FPGA.
 
+We introduce it with the following order:
+1) Brief introduction of the RTL structure.
+2) Add modified/customized codes to Chipyard, including controller/scheduler modules and modified inclusive cache modules (rocket-chip-inclusive-cache). We pack all the design code within rocket-chip-inclusive-cache and make it a new folder as rocket-chip-inclusive-cache-pic-virtual.
+3) Module test in Chipyard via verilator or vcs under baremetal mode.
+4) Deployment on FPGA with Linux running.
+
+Please cite this work if this manual or work help your research or project:
 ```
 @inproceedings{zou2025polymorpic,
 author = {Zou, Cheng and Wei, Ziling and Lee, Jun Yan and Nie, Chen and You, Kang and He, Zhezhi},
@@ -19,11 +26,11 @@ series = {MICRO '25}
 }
 ```
 
-### Prerequisites
+### Software Prerequisites
 1. Chipyard12
 2. Vivado2022.2
 
-### RTL Structure
+## 1. RTL Structure
 
 The follwoing figure shows the RTL modules overall view from `DigitalTop` Module.
 ![Overview](Figures/rtl_view_all.png)
@@ -61,7 +68,7 @@ The following figure shows the structure.
 
 ![Bank](Figures/bank_structure.png)
 
-### Embed PolymorPIC code into Chipyard.
+## 2. Embed PolymorPIC code into Chipyard.
 
 **Only chipyard12 is verified and supported for this demo.**
 
@@ -204,9 +211,7 @@ The <code>Makefile</code> contains which test to compile when <code>make</code>.
 
 </ol>
 
-### General Simulation and FPGA deployment steps
-
-#### Simulation on Chipyard
+## 3. Simulation on Chipyard
 
 To verify the correctness of the RTL functionality, the design should first be validated using VCS or Verilator.
 Before this step, step `Embed PolymorPIC code into Chipyard` should have been finished.
@@ -269,7 +274,7 @@ This Acc result is all correct!
 
 </ol>
 
-#### FPGA deployment (Run Linux)
+## 4. FPGA deployment (Run Linux)
 
 The FPGA deployment implementation is based on https://github.com/eugene-tarassov/vivado-risc-v from eugene-tarassov.
 The modified project is `vivado_fpga_pic`.
@@ -277,7 +282,7 @@ We further modify the process and make it support zcu102 and customized boards.
 This step is elaborated based on zcu102, and directly use our modified script that supports the zcu102.
 With respect to how to support customized boards not from Xilinx and create the script, the turtorial is also provided in other section. 
 
-##### 1. Hardware Preparation (zcu102 as example)
+### 4.1 Hardware Preparation (zcu102 as example)
 
 <ol>
 <li>SD card slot preparasion</li>
@@ -353,12 +358,12 @@ The resource on zcu102 pl is:
 
 </ol>
 
-##### 2. Software Preparation
+### 4.2 Software Preparation
 
 This step aims to prepare the linux image, which contains the programs to run on FPGA.
 Take ACC_test as an example here.
 
-###### Example: ACC test
+#### Example: ACC test
 
 The Accumulator has been test on RTL simulator like VCS and verilator, however, those simulation is based on baremetal.
 
@@ -415,7 +420,7 @@ Then, umount:
 
 Then, flash the `debian-riscv64.sd.img` to the SD card using balenaEtcher. 
 
-##### 3. Start FPGA
+### 4.3 Start FPGA
 
 Connect zcu102 jtag and uart to the machine.
 Connect the SD card to the zcu102.
