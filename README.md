@@ -1,11 +1,15 @@
-# Manual of PolymorPIC deployment on FPGA
-Includes module test on both simulator and Linux running on FPGA.
+# PolymorPIC: Embedding Polymorphic Processing-in-Cache in RISC-V based Processor for Full-stack Efficient AI Inference
 
-We introduce it with the following order:
-1) Brief introduction of the RTL structure.
-2) Add modified/customized codes to Chipyard, including controller/scheduler modules and modified inclusive cache modules (rocket-chip-inclusive-cache). We pack all the design code within rocket-chip-inclusive-cache and make it a new folder as rocket-chip-inclusive-cache-pic-virtual.
-3) Module test in Chipyard via verilator or vcs under baremetal mode.
-4) Deployment on FPGA with Linux running.
+[![MICRO](https://img.shields.io/badge/MICRO-2025-red)](https://dl.acm.org/doi/full/10.1145/3725843.3756066)
+[![Chipyard](https://img.shields.io/badge/Chipyard-blue)](https://github.com/ucb-bar/chipyard)
+[![RISC-V](https://img.shields.io/badge/RISC-V-purple)](https://riscv.org/)
+[![License](https://img.shields.io/badge/License-MuLan_PSL_2.0-blue.svg)](https://opensource.org/license/mulanpsl-2-0)
+
+Official Manual of PolymorPIC deployment on FPGA, inclduing module test on both simulator and Linux running on FPGA.
+
+>**[PolymorPIC: Embedding Polymorphic Processing-in-Cache in RISC-V based Processor for Full-stack Efficient AI Inference](https://dl.acm.org/doi/full/10.1145/3725843.3756066)**  
+> Cheng Zou, Ziling Wei, Jun Yan Lee, Chen Nie, Kang You, Zhezhi He  
+> *Proceedings of Proceedings of the 58th IEEE/ACM International Symposium on Microarchitecture (MICRO), 2025*
 
 Please cite this work if this manual or work help your research or project:
 ```
@@ -25,6 +29,14 @@ location = {},
 series = {MICRO '25}
 }
 ```
+
+
+We introduce it with the following order:
+1) Brief introduction of the RTL structure.
+2) Add modified/customized codes to Chipyard, including controller/scheduler modules and modified inclusive cache modules (rocket-chip-inclusive-cache). We pack all the design code within rocket-chip-inclusive-cache and make it a new folder as rocket-chip-inclusive-cache-pic-virtual.
+3) Module test in Chipyard via verilator or vcs under baremetal mode.
+4) Deployment on FPGA with Linux running.
+
 
 ### Software Prerequisites
 1. Chipyard12
