@@ -218,28 +218,7 @@ case class Sys_Config(
     val header_def_path  = "./generators/rocket-chip-inclusive-cache-pic-virtual/design/craft/PolymorPIC/ISA/ISA.h"
     val header_impl_path  = "./generators/rocket-chip-inclusive-cache-pic-virtual/design/craft/PolymorPIC/ISA/ISA.c"
     val header_cpy_Paths = Array(
-                                // Benchmark
-                                "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/DMA_test",
                                 "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/ACC_test",
-                                "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/ISA_test",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/P2SL_test",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/P2SR_test",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/P2SRT_test",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/IM2COL_test",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/switch_MM",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/P2SR_test",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/P2SRT_test",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/switch",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/switch_MM",
-                                // "/root/chipyard/toolchains/riscv-tools/riscv-tests/benchmarks/switch_linux",
-                                // FPGA
-                                // "/root/chipyard/baremetal/ACC",
-                                // "/root/chipyard/baremetal/IM2COL",
-                                // "/root/chipyard/baremetal/P2SL",
-                                // "/root/chipyard/baremetal/P2SR",
-                                // "/root/chipyard/baremetal/P2SRT",
-                                // "/root/chipyard/baremetal/switch/head",
-                                // "/root/chipyard/baremetal/switch_MM/head",
                                 )
 
     // Schedular check intervals
