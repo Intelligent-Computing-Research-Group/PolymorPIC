@@ -173,6 +173,7 @@ class Load_ctl(sysCfg:Sys_Config)(implicit p: Parameters) extends Module
             {
             row_num_reg:=0.U
             load_state:=Mux(io.process_busy,load_state,load_idle)
+            }
         }
     }
 }

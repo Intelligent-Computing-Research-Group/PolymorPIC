@@ -307,7 +307,8 @@ class Controller(kernal_configs:PolymorPIC_Kernal_Config) extends Module
                 mainState:=cal
             }
 
-            when(is_wBuf_ptr_end && read_C_ArrayAddr_reg=/=0.U)     
+            when(is_wBuf_ptr_end && read_C_ArrayAddr_reg=/=0.U)
+            {    
                 write_M_array_En_wire:=true.B
                 when(!is_first_slice)
                 {
