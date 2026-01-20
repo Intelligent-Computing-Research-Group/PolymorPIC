@@ -26,14 +26,14 @@ include board/$(BOARD)/Makefile.inc
 apt-install:
 	sudo apt update
 	sudo apt install default-jdk device-tree-compiler curl gawk \
-	 libtinfo5 libmpc-dev libssl-dev gcc gcc-riscv64-linux-gnu 
+	 libtinfo5 libmpc-dev libssl-dev gcc gcc-riscv64-linux-gnu kpartx util-linux
 ifeq ($(shell test -r /etc/os-release && . /etc/os-release && echo $$VERSION_CODENAME),jammy)
 	sudo apt install python-is-python3
 else
 	sudo apt install python
 endif
 
-apt-install-qemi:
+apt-install-qemu:
 	sudo apt install qemu-system-misc opensbi u-boot-qemu qemu-utils
 
 clean-sbt:
@@ -127,6 +127,9 @@ u-boot-qemu:
 	cd qemu/ && if [ ! -d u-boot ]; then git clone https://github.com/u-boot/u-boot.git; fi && cd u-boot && git checkout v2022.01
 	cd qemu/u-boot && export CROSS_COMPILE=$(CROSS_COMPILE_LINUX) && make qemu-riscv64_smode_defconfig && make -j$(nproc)
 
+opensbi-qemu:
+	cd qemu && if [ ! -d opensbi ]; then git clone https://github.com/riscv-software-src/opensbi.git; fi
+	cd qemu && make -C opensbi clean && make -C opensbi PLATFORM=generic CROSS_COMPILE=$(CROSS_COMPILE_LINUX) FW_PAYLOAD_PATH=../u-boot/u-boot.bin
 # --- generate HDL ---
 
 CONFIG_SCALA := $(subst rocket,Rocket,$(CONFIG))

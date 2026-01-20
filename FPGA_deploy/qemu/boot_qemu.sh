@@ -6,13 +6,11 @@
 # fi
 
 
-# 检查是否提供了镜像文件路径
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <path_to_debian_riscv64_sd_img>"
     exit 1
 fi
 
-# 从参数中获取镜像文件路径
 DEBIAN_RISCV64_SD_IMG=$1
 
 qemu-system-riscv64 -machine virt -m 8G -nographic \

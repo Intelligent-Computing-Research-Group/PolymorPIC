@@ -407,22 +407,6 @@ class BigRocketPIC1024KB extends Config(
   new WithNBigCores(1) ++  
   new RocketBaseConfig)
 
-class BigRocketPIC1024KBNCF extends Config(
-  new PIC.WithRoccInterface ++
-  new freechips.rocketchip.subsystem.WithoutTLMonitors ++
-  new freechips.rocketchip.subsystem.WithoutDebug ++
-  new WithInclusiveCache(nWays=16, capacityKB=1024) ++
-  new WithNBigCores(1) ++  
-  new RocketBaseConfig)
-
-class BigRocketPIC1024KBDCF extends Config(
-  new PIC.WithRoccInterface ++
-  new freechips.rocketchip.subsystem.WithoutTLMonitors ++
-  new freechips.rocketchip.subsystem.WithoutDebug ++
-  new WithInclusiveCache(nWays=16, capacityKB=1024) ++
-  new WithNBigCores(1) ++  
-  new RocketBaseConfig)
-
 class SmallBoomPIC1024KB extends Config(
   new PIC.WithRoccInterface ++
   new freechips.rocketchip.subsystem.WithoutTLMonitors ++

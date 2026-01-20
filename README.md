@@ -297,10 +297,13 @@ This Acc result is all correct!
 ## 4. FPGA deployment (Run Linux)
 
 The FPGA deployment implementation is based on https://github.com/eugene-tarassov/vivado-risc-v from eugene-tarassov.
-The modified project is `vivado_fpga_pic`.
+The modified project is `FPGA_deploy`.
 We further modify the process and make it support zcu102 and customized boards.
 This step is elaborated based on zcu102, and directly use our modified script that supports the zcu102.
-With respect to how to support customized boards not from Xilinx and create the script, the turtorial is also provided in other section. 
+Since the Chipyard version at the time (2024) was incompatible with the FPGA deployment repository vivado-risc-v, we performed manual modifications. 
+We also utilized a pre-compiled Ubuntu system image from vivado-risc-v repo to skip the manual compilation process. 
+As the vivado-risc-v has been updated recently, our future work will try to synchronizing the project with the latest vivado-risc-v repo.
+With respect to how to support customized boards not from Xilinx and create the script, the turtorial will also be provided in other section. 
 
 ### 4.1 Hardware Preparation (zcu102 as example)
 
@@ -323,27 +326,76 @@ It uses PMOD connector, which is supported by PL side of zcu102. Connect it to t
   <img src="Figures/connect.png" alt="connect" width="300">
 </p>
 
-Go to the folder `vivado_fpga_pic`. Then input command:
+
+<li>Board Start mode</li>
+
+<p align="center">
+  <img src="Figures/start_mode.jpeg" alt="SD-Slot" width="300">
+</p>
+
+</ol>
+
+
+### 4.2 FPGA deployment tools and scripts
+
+This step uses `FPGA_deploy` folder.
+We modify https://github.com/eugene-tarassov/vivado-risc-v and only keep the function of vivado tcl script generation and qemu emulation.
+
+We will try to keep up with the latest version of vivado-risc-v and further match the flexibility of customized Linux image generation flow.
+Currently, we use the compiled Linux image from vivado-risc-v repo.
+
+⚠️ For easy use, you'd better make operation of `FPGA_deploy` in a container (docker).
+
+<ol>
+
+<li>Install necessary tools</li>
+
+Go to <code>FPGA_deploy</code>, run:
+```
+make apt-install
+```
+
+<li>Compile the SoC rtl and gen vivado tcl</li>
+
+For easy operation, we have added the PolymorPIC customized code to FPGA_deploy.
+You can check `FPGA_deploy/generators/sifive-cache` and find that it is the same as the one under chipyard (For version reason, the name here is stil sifive-cache).
+The rocket-chip and boom code are also modified (`FPGA_deploy/generators/riscv-boom` and `rocket-chip`), similar in Chipyard.
+This means if you change design in Chipyard, you should also change it here for FPGA deployment.
+
+📝 Further work will try to use a patch method to apply modification to these codes for easy and clear operation.
+
+Now, check `FPGA_deploy/src/main/scala/rocket.scala`, you can find the SoC generation configuration here.
+Most configuration is pre-written by `vivado-risc-v` repo, we dont use them.
+We use our own configuration `BigRocketPIC1024KB` as example here
+
+
+Under the folder `FPGA_deploy`, run command:
 ```bash
 make vivado-tcl BOARD=zcu102 CONFIG=BigRocketPIC1024KB ROCKET_FREQ_MHZ=72.0
 ```
-Then the compile begins. Afterwards, a folder named `workspace` is generated. 
-It should be copied to a machine with Vivado2022.2. For easy movement, input the pack command:
+Then the compile begins. 
+During the process, it will download a riscv tool from `vivado-risc-v` repo, about 500MB.
+Download occurs only once. Cached file will be used for future runs.
+Afterwards, a folder named `workspace` is generated. 
+It should be copied to a machine with Vivado2022.2. 
+It contains necessary modules RTL files and vivado block design generation scripts.
+For easy movement, we set a pack command.
+Input the pack command:
 ```bash
 make pack PACK_NAME=zcu102_bigrocket_PIC_1M_72mhz
 ```
 
-Then the necessary files will be packed into `zcu102_bigrocket_PIC_1M_72mhz.tar`.
+Then the necessary files will be packed into `zcu102_bigrocket_PIC_1M_72mhz.tar` and moved to `/root/`.
 
 Copy `zcu102_bigrocket_PIC_1M_72mhz.tar` to a machine having vivado2022.2.
 
-Extract the files and open vivado.
+Go to the mechine having vivado. Extract the files `zcu102_bigrocket_PIC_1M_72mhz.tar` and open vivado.
 
 ```bash
-source /nvme/zcu102_bigRocket_pic_1024_72mhz/workspace/BigRocketPIC1024KB/system-zcu102.tcl
+source <PATH_TO_zcu102_bigRocket_pic_1024_72mhz>/workspace/BigRocketPIC1024KB/system-zcu102.tcl
 ```
 
-Input the upper command is input in the following position of gui:
+Open vivado, input the upper command to vivado tcl console:
 <p align="center">
   <img src="Figures/vivado_start.png" alt="connect" width="300">
 </p>
@@ -378,16 +430,34 @@ The resource on zcu102 pl is:
 
 </ol>
 
-### 4.2 Software Preparation
+### 4.3 Software Preparation
 
 This step aims to prepare the linux image, which contains the programs to run on FPGA.
 Take ACC_test as an example here.
 
-#### Example: ACC test
+<ol>
+<li>Ubuntu Image</li>
 
-The Accumulator has been test on RTL simulator like VCS and verilator, however, those simulation is based on baremetal.
+In the original steps of `https://github.com/eugene-tarassov/vivado-risc-v`, the Linux image is compiled manually.
 
-To run simulation on Linux on system-level, the page needs to be locked. The code is like:
+For easy deployment, we use the compiled ones `https://github.com/eugene-tarassov/vivado-risc-v/releases/download/v3.7.0/debian-riscv64.sd.img.gz`
+
+We further shut down the network function at start up, which make the system start process much faster (3x faster).
+
+Here is our image:
+`!TO BE UPLOADED!`
+
+Unpack it and get `debian-riscv64.sd.img`.
+
+<li>Prepare test program: ACC test as an example</li>
+
+Now, go back to the chipyard, we stil use the code under benchmarks.
+
+The Accumulator has been test on RTL simulator like VCS and verilator under Chipyard, however, those simulation is based on baremetal.
+
+To run simulation on Linux on system-level, the page needs to be locked. 
+
+The code is like (`ACC_test/main.c`):
 ```C
 #ifdef LINUX
     if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0) 
@@ -402,8 +472,11 @@ To run simulation on Linux on system-level, the page needs to be locked. The cod
 #endif
     printf("Test a1 begin.\n");
 ```
+</ol>
 
-The pre-build image is ready under folder `debian_img`. Steps to compile and move the execution file to the image:
+In the last step, the pre-build image is ready `debian-riscv64.sd.img`. 
+
+Steps to cross-compile and move the execution file to the image:
 <ol>
 <li>Compile the riscv execution using cross-comepile</li>
 
@@ -419,33 +492,41 @@ Then we get elf file `ACC`.
 
 <li>Copy file to the Linux image</li>
 
-The image file should be mount first. The file system is the second section of the provided `debian-riscv64.sd.img`.
+The image file should be mount to the host first, so that we can move file to it.
+The file system is the second section of the provided `debian-riscv64.sd.img`.
 
-You can use the provided scrip to mount:
+You can use the provided scrip to mount (`Image_mount/mount.sh`):
 ```bash
 ./mount.sh debian-riscv64.sd.img 2 /root/img_mount/
 ```
 
-It is mount to the folder `/root/img_mount/`:
+It is mount to the folder `/root/img_mount/` (you can choose another place):
 <p align="center">
   <img src="Figures/image_files.jpg" alt="connect" width="300">
 </p>
 
 Directly copy the elf `ACC` to root or any other folders.
 
-Then, umount:
+Then, umount (⚠️ Dont forget to unmont!! Dont forget to change address according to yours!!):
 ```bash
 ./umount.sh debian-riscv64.sd.img /root/img_mount/
 ```
 
-Then, flash the `debian-riscv64.sd.img` to the SD card using balenaEtcher. 
+Then, flash the `debian-riscv64.sd.img` to the SD card using balenaEtcher or any other tools. 
 
-### 4.3 Start FPGA
+</ol>
 
-Connect zcu102 jtag and uart to the machine.
-Connect the SD card to the zcu102.
-Use vivado to program the device.
-Open serial monitor to watch the uart output (115200):
+### 4.4 Start FPGA
+
+Complete the following steps:
+
+✅ Connect zcu102 jtag and uart to the machine.
+
+✅ Connect the SD card to the zcu102.
+
+✅ Use vivado to program the device.
+
+✅ Open serial monitor to watch the uart output (115200):
 
 <p align="center">
   <img src="Figures/uart_start.jpg" alt="connect" width="500">
@@ -468,6 +549,61 @@ root@debian:~#
 
 The username is `root` and the password is `1`.
 
-Run `ACC`.
+Run `ACC`:
 
 </ol>
+
+
+### 4.5 How to configure the Linux via Qemu (Optional)
+
+If you want to install some tools to the Linux image, you can use qemu on your host mechine.
+
+For example, if you want to install `mbw` tools, you can use Qemu to run `apt install`.
+
+Go to the folder `FPGA_deploy`.
+
+Then, install qemu:
+```bash
+make apt-install-qemu
+```
+
+Setup qemu, which needs specific bios compiled by u-boot and opensbi:
+```
+make u-boot-qemu
+make opensbi-qemu
+```
+Then, under `FPGA_deploy`, run:
+```bash
+./qemu/boot_qemu.sh <IMAGE_PATH>
+```
+
+Login with `root` and password 1:
+```
+debian login: root
+Password: 
+Linux debian 6.9.6-dirty #1 SMP Fri Jul 19 23:29:15 CST 2024 riscv64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+root@debian:~#
+```
+
+Because in our provided image, network is disabled, if you want to download things, it should be enabled.
+Start it temporarily, run (still won't run when sys startup):
+```bash
+systemctl start networking.service
+```
+
+Then, do whatere you want.
+
+If you want to exit, use poweroff:
+```
+root@debian:~# poweroff
+```
+
+Then press ctrl+A. 
+Release ctrl+A then press X to exit qemu.
