@@ -1,0 +1,14 @@
+/workspace/
+/pre_download_tools/
+/target/
+/project/target/
+/project/project/target/
+/generators/targetutils/target/
+/bare-metal/hello-world/boot.elf
+/.bash_history
+/.cache/
+/.config/
+/.flexlmrc
+/.ivy2/
+/.sbt/
+build_log.txt
