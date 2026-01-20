@@ -5,6 +5,8 @@
 /project/project/target/
 /generators/targetutils/target/
 /bare-metal/hello-world/boot.elf
+/qemu/u-boot/
+/qemu/opensbi/
 /.bash_history
 /.cache/
 /.config/
