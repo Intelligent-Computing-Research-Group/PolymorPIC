@@ -377,6 +377,15 @@ Then the compile begins.
 During the process, it will download a riscv tool from `vivado-risc-v` repo, about 500MB.
 Download occurs only once. Cached file will be used for future runs.
 Afterwards, a folder named `workspace` is generated. 
+If you see the outputs like following, the process finishes successfully:
+```
+...
+echo "set riscv_clock_frequency 72.0" >>workspace/BigRocketPIC1024KB/system-zcu102.tcl
+echo "set memory_size 0x20000000" >>workspace/BigRocketPIC1024KB/system-zcu102.tcl
+echo 'cd [file dirname [file normalize [info script]]]' >>workspace/BigRocketPIC1024KB/system-zcu102.tcl
+echo 'source ../../vivado.tcl' >>workspace/BigRocketPIC1024KB/system-zcu102.tcl
+```
+
 It should be copied to a machine with Vivado2022.2. 
 It contains necessary modules RTL files and vivado block design generation scripts.
 For easy movement, we set a pack command.
@@ -607,3 +616,19 @@ root@debian:~# poweroff
 
 Then press ctrl+A. 
 Release ctrl+A then press X to exit qemu.
+
+
+## 5. Q&A
+
+<ol>
+<li>String problem during chipyard running or FPGA flow</li>
+
+Try to execute the following commands:
+
+```
+apt-get install -y locales
+localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
+locale-gen en_US.UTF-8
+```
+
+</ol>
