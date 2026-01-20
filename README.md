@@ -40,7 +40,7 @@ We introduce it with the following order:
 
 ### Software Prerequisites
 1. Chipyard12
-2. Vivado2022.2
+2. Vivado2022.2 (32GB RAM host, 16GB RAM is not enough)
 
 ## 1. RTL Structure
 
@@ -630,5 +630,22 @@ apt-get install -y locales
 localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 locale-gen en_US.UTF-8
 ```
+
+<li>Vivado has no device part.</li>
+
+When source tcl script in vivado TCL console, it gives error:
+```bash
+WARNING: [Device 21-436] No parts matched 'xczu9eg-ffvb1156-2-e'
+ERROR: [Coretcl 2-106] Specified part could not be found.
+
+    while executing
+"source ../../vivado.tcl"
+    (file "G:/Downloads/zcu102_bigrocket_PIC_1M_72mhz/workspace/BigRocketPIC1024KB/system-zcu102.tcl" line 8)
+```
+
+This happens because you have no device part (zcu102) installed in vivado.
+
+If zcu102 is used, there is no board files because you install vivado standard.
+You should change it to enterprise version.
 
 </ol>
