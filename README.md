@@ -504,12 +504,12 @@ Then we get elf file `ACC`.
 The image file should be mount to the host first, so that we can move file to it.
 The file system is the second section of the provided `debian-riscv64.sd.img`.
 
-You can use the provided scrip to mount (`Image_mount/mount.sh`):
+You can use the provided scrip to mount (`Image_mount/mount.sh`). ⚠️ The mount point should be an existed folder:
 ```bash
 ./mount.sh debian-riscv64.sd.img 2 /root/img_mount/
 ```
 
-It is mount to the folder `/root/img_mount/` (you can choose another place):
+It is mount to the folder `/root/img_mount/` (⚠️ you can choose another place and it should be an existed empty folder):
 <p align="center">
   <img src="Figures/image_files.jpg" alt="connect" width="300">
 </p>
@@ -537,11 +537,16 @@ Complete the following steps:
 
 ✅ Open serial monitor to watch the uart output (115200):
 
+💬 If the bitstream is loaded successfully, the LED0 (DS38) on zcu102 board will blink. If you push reset button (SW15), LED0 will blink again.
+
+The XDC defines the mapping of the reset button and LED lights, you can change it in vivado project or in the `FPGA_deploy/board/zcu102`.
+
 <p align="center">
   <img src="Figures/uart_start.jpg" alt="connect" width="500">
 </p>
 
-Then, there is login step:
+After you connect to the uart, you will see the Linux start process.
+Then, there is login step from uart:
 ```
 debian login: root
 Password: 
@@ -556,9 +561,63 @@ permitted by applicable law.
 root@debian:~#
 ```
 
-The username is `root` and the password is `1`.
+❗ The username is `root` and the password is `1`.
 
 Run `ACC`:
+
+```
+debian login: root
+Password: 
+Linux debian 6.9.6-dirty #1 SMP Fri Jul 19 23:29:15 CST 2024 riscv64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+root@debian:~# ls
+ACC
+root@debian:~# ./ACC
+Switch successfully!
+################ Runtime State ###############
+Totally 93.750000% Cache Memory is used as Computation
+Available Cache Volumn (KB) = 64
+Available PIC Volumn (KB) = 960
+Available Mats = 60
+Available Mats Range = 4~63
+##############################################
+Test a1 begin.
+Load finish!Switch successfully!
+################ Runtime State ###############
+Totally 0.000000% Cache Memory is used as Computation
+Available Cache Volumn (KB) = 1024
+Available PIC Volumn (KB) = 0
+Available Mats = 0
+Available Mats Range = 63~63
+##############################################
+ACC check start!
+This Acc result is all correct!
+Switch successfully!
+################ Runtime State ###############
+Totally 75.000000% Cache Memory is used as Computation
+Available Cache Volumn (KB) = 256
+Available PIC Volumn (KB) = 768
+Available Mats = 48
+Available Mats Range = 16~63
+##############################################
+Test a2 begin.
+Load finish!Switch successfully!
+################ Runtime State ###############
+Totally 0.000000% Cache Memory is used as Computation
+Available Cache Volumn (KB) = 1024
+Available PIC Volumn (KB) = 0
+Available Mats = 0
+Available Mats Range = 63~63
+##############################################
+ACC check start!
+This Acc result is all correct!
+```
 
 </ol>
 
